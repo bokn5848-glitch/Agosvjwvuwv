@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Câu Đố Thách Não</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f2f2f2;
+    text-align:center;
+    padding:20px;
+}
+.box{
+    background:white;
+    max-width:520px;
+    margin:auto;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+button{
+    padding:10px 15px;
+    margin:5px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    color:white;
+    background:#4CAF50;
+}
+.answer{
+    display:block;
+    width:100%;
+    margin:8px 0;
+    background:#2196F3;
+}
+#score{font-weight:bold;margin-top:10px}
+#hint{
+    margin-top:10px;
+    color:#ff5722;
+    font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div class="box" id="menu">
+    <h2>🧠 CÂU ĐỐ THÁCH NÃO</h2>
+    <p>Chọn độ khó</p>
+    <button onclick="start('easy')">Dễ</button>
+    <button onclick="start('medium')">Trung Bình</button>
+    <button onclick="start('hard')">Khó</button>
+</div>
+
+<div class="box" id="game" style="display:none">
+    <h3 id="question"></h3>
+    <div id="answers"></div>
+    <button onclick="useHint()">💡 Gợi ý (-3 điểm)</button>
+    <p id="hint"></p>
+    <p id="score"></p>
+</div>
+
+<script>
+// ===== ÂM THANH =====
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function playSound(f,d){
+const o=audioCtx.createOscillator();
+const g=audioCtx.createGain();
+o.frequency.value=f;
+o.connect(g); g.connect(audioCtx.destination);
+o.start();
+g.gain.setValueAtTime(0.3,audioCtx.currentTime);
+g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);
+o.stop(audioCtx.currentTime+d);
+}
+const soundCorrect=()=>playSound(800,0.2);
+const soundWrong=()=>playSound(200,0.4);
+
+// ===== DATA =====
+const questions=[];
+const add=(t,c,o,l,h)=>questions.push({t,c,o,l,h});
+
+// ===== DỄ =====
+add("(Dễ) Con gì càng to càng nhỏ?","Con cua",
+["Con cua","Con voi","Con mèo","Con kiến"],
+"easy","Nghĩ đến cách đi của nó");
+
+while(questions.filter(q=>q.l==="easy").length<67){
+add("(Dễ) 3 + 2 = ?","5",["3","4","5","6"],
+"easy","Phép cộng cơ bản");
+}
+
+// ===== TRUNG BÌNH =====
+add("(TB) Số tiếp theo: 1, 3, 6, 10, ?",
+"15",["12","14","15","16"],
+"medium","Dãy số tăng dần");
+
+while(questions.filter(q=>q.l==="medium").length<134){
+add("(TB) 7 × 4 = ?","28",
+["24","26","28","30"],
+"medium","Phép nhân");
+}
+
+// ===== KHÓ =====
+add("(Khó) Cái gì càng rửa càng bẩn?",
+"Nước",
+["Nước","Khăn","Xà phòng","Áo"],
+"hard","Thứ dùng để làm sạch");
+
+while(questions.filter(q=>q.l==="hard").length<200){
+add("(Khó) Số tiếp theo: 2, 4, 8, 16, ?",
+"32",
+["24","30","32","64"],
+"hard","Nhân đôi mỗi bước");
+}
+
+// ===== GAME =====
+let list=[],i=0,score=0,usedHint=false;
+
+function shuffle(arr){
+for(let i=arr.length-1;i>0;i--){
+const j=Math.floor(Math.random()*(i+1));
+[arr[i],arr[j]]=[arr[j],arr[i]];
+}
+}
+
+function start(level){
+audioCtx.resume();
+list=questions.filter(q=>q.l===level);
+shuffle(list); // 🔀 XÁO TRỘN
+i=0; score=0;
+menu.style.display="none";
+game.style.display="block";
+show();
+}
+
+function show(){
+usedHint=false;
+hint.innerText="";
+if(i>=list.length){
+question.innerText=`🎉 Hoàn thành! ${score}/${list.length} điểm`;
+answers.innerHTML=`<button onclick="location.reload()">Chơi lại</button>`;
+return;
+}
+const q=list[i];
+question.innerText=q.t;
+scoreBox.innerText=`Câu ${i+1}/${list.length} | Điểm: ${score}`;
+answers.innerHTML="";
+q.o.forEach(x=>{
+const b=document.createElement("button");
+b.className="answer";
+b.innerText=x;
+b.onclick=()=>{
+if(x===q.c){score++;soundCorrect();}
+else soundWrong();
+i++; setTimeout(show,300);
+};
+answers.appendChild(b);
+});
+}
+
+function useHint(){
+if(usedHint) return;
+score=Math.max(0,score-3);
+hint.innerText="💡 Gợi ý: "+list[i].h;
+usedHint=true;
+scoreBox.innerText=`Câu ${i+1}/${list.length} | Điểm: ${score}`;
+}
+
+// ===== DOM =====
+const question=document.getElementById("question");
+const answers=document.getElementById("answers");
+const scoreBox=document.getElementById("score");
+const hint=document.getElementById("hint");
+</script>
+
+</body>
+</html>
