@@ -1,93 +1,127 @@
-// ===== DATA: MỖI CẤP ĐỘ 80 CÂU =====
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Câu Đố Thách Não</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:Arial;background:#f2f2f2;text-align:center;padding:20px}
+.box{background:#fff;max-width:520px;margin:auto;padding:20px;border-radius:12px}
+button{padding:10px;margin:6px;border:none;border-radius:8px;font-size:16px;color:#fff;background:#4CAF50}
+.answer{display:block;width:100%;background:#2196F3}
+#hint{color:#ff5722;font-weight:bold}
+</style>
+</head>
+<body>
+
+<div class="box" id="menu">
+<h2>🧠 CÂU ĐỐ THÁCH NÃO</h2>
+<button onclick="start('easy')">Dễ</button>
+<button onclick="start('medium')">Trung bình</button>
+<button onclick="start('hard')">Khó</button>
+</div>
+
+<div class="box" id="game" style="display:none">
+<h3 id="question"></h3>
+<div id="answers"></div>
+<button onclick="useHint()">💡 Gợi ý (-3 điểm)</button>
+<p id="hint"></p>
+<p id="score"></p>
+</div>
+
+<script>
+// ===== DOM =====
+const menu=document.getElementById("menu");
+const game=document.getElementById("game");
+const question=document.getElementById("question");
+const answers=document.getElementById("answers");
+const scoreBox=document.getElementById("score");
+const hintBox=document.getElementById("hint");
+
+// ===== ÂM THANH =====
+const ctx=new(window.AudioContext||window.webkitAudioContext)();
+const beep=(f,d)=>{
+const o=ctx.createOscillator(),g=ctx.createGain();
+o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
+o.start();g.gain.setValueAtTime(0.3,ctx.currentTime);
+g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d);
+o.stop(ctx.currentTime+d);
+};
+
+// ===== DATA =====
 const questions=[];
 const add=(t,c,o,l,h)=>questions.push({t,c,o,l,h});
 
-/* ================= DỄ (80 CÂU) ================= */
-// 10 câu đố chữ – mẹo dễ
-const easyWords=[
-["Con gì càng to càng nhỏ?","Con cua","Cách di chuyển"],
-["Cái gì có cổ không có đầu?","Cái áo","Đồ mặc"],
-["Trắng như tuyết, ngọt như đường?","Đường","Pha nước"],
-["Cái gì đập thì sống, không đập thì chết?","Tim","Trong cơ thể"],
-["Cái gì có răng mà không có miệng?","Cái lược","Dùng chải tóc"],
-["Cái gì càng đầy càng nhẹ?","Bóng bay","Có khí"],
-["Cái gì đi mà không đến?","Thời gian","Không dừng"],
-["Cái gì luôn ở phía trước bạn?","Tương lai","Chưa tới"],
-["Cái gì có mặt mà không có mũi?","Đồng hồ","Xem giờ"],
-["Cái gì càng kéo càng ngắn?","Điếu thuốc","Mẹo"]
-];
+// EASY 80
+for(let i=1;i<=80;i++)
+add(`(Dễ) ${i} + ${i+1} = ?`,""+(i+i+1),
+[""+(i+i+1),""+(i+i),""+(i+i+2),""+(i+i+3)],
+"easy","Cộng số liên tiếp");
 
-easyWords.forEach(q=>{
-add("(Dễ) "+q[0],q[1],
-[q[1],"Không biết","Cái bàn","Con mèo"],
-"easy",q[2]);
-});
-
-// 70 câu toán dễ (sinh tự động)
-for(let i=1;i<=70;i++){
-let a=i, b=i+1;
-add(`(Dễ) ${a} + ${b} = ?`,
-""+(a+b),
-[""+(a+b),""+(a+b+1),""+(a+b-1),""+(a+b+2)],
-"easy","Cộng hai số liên tiếp");
-}
-
-/* ================= TRUNG BÌNH (80 CÂU) ================= */
-// 20 câu logic – suy luận
-for(let i=1;i<=20;i++){
+// MEDIUM 80
+for(let i=1;i<=80;i++)
 add(`(TB) Số tiếp theo: ${i}, ${i*2}, ${i*3}, ?`,
 ""+(i*4),
 [""+(i*4),""+(i*5),""+(i*3),""+(i*6)],
 "medium","Nhân tăng dần");
+
+// HARD 80
+for(let i=2;i<=81;i++)
+add(`(Khó) Dãy số: ${i}, ${i*2}, ${i*4}, ?`,
+""+(i*8),
+[""+(i*6),""+(i*8),""+(i*10),""+(i*12)],
+"hard","Nhân đôi");
+
+// ===== GAME =====
+let list=[],i=0,score=0,usedHint=false;
+
+const shuffle=a=>{
+for(let i=a.length-1;i>0;i--){
+const j=Math.floor(Math.random()*(i+1));
+[a[i],a[j]]=[a[j],a[i]];
+}};
+
+function start(level){
+ctx.resume();
+list=questions.filter(q=>q.l===level);
+shuffle(list);
+i=0;score=0;
+menu.style.display="none";
+game.style.display="block";
+show();
 }
 
-// 20 câu toán trung bình
-for(let i=5;i<=24;i++){
-add(`(TB) ${i} × ${i-1} = ?`,
-""+(i*(i-1)),
-[""+(i*(i-1)),""+(i*i),""+(i*(i-2)),""+(i+10)],
-"medium","Phép nhân");
+function show(){
+usedHint=false;
+hintBox.innerText="";
+if(i>=list.length){
+question.innerText=`🎉 Xong! Điểm: ${score}/${list.length}`;
+answers.innerHTML=`<button onclick="location.reload()">Chơi lại</button>`;
+return;
+}
+const q=list[i];
+question.innerText=q.t;
+scoreBox.innerText=`Câu ${i+1}/${list.length} | Điểm: ${score}`;
+answers.innerHTML="";
+q.o.forEach(x=>{
+const b=document.createElement("button");
+b.className="answer";b.innerText=x;
+b.onclick=()=>{
+x===q.c?(score++,beep(800,0.2)):beep(200,0.4);
+i++;setTimeout(show,250);
+};
+answers.appendChild(b);
+});
 }
 
-// 40 câu đố mẹo
-const mediumTrick=[
-["Cái gì đi lên thì nhỏ, đi xuống thì to?","Ô dù","Khi mưa"],
-["3 người uống nước, người bán đưa 2 ly. Vì sao?","1 người không uống","Mẹo logic"],
-["Nhà có 4 góc, mỗi góc có mèo. Có bao nhiêu mèo?","4","Đếm lại"],
-["Cái gì có chân mà không đi?","Cái bàn","Đồ vật"]
-];
-
-let mt=0;
-while(questions.filter(q=>q.l==="medium").length<160){
-let q=mediumTrick[mt%mediumTrick.length];
-add("(TB) "+q[0],q[1],
-[q[1],"Không biết","Sai","Không rõ"],
-"medium",q[2]);
-mt++;
+function useHint(){
+if(usedHint) return;
+score=Math.max(0,score-3);
+hintBox.innerText="💡 "+list[i].h;
+usedHint=true;
+scoreBox.innerText=`Câu ${i+1}/${list.length} | Điểm: ${score}`;
 }
+</script>
 
-/* ================= KHÓ (80 CÂU) ================= */
-// 50 dãy số khó
-for(let n=2;n<=51;n++){
-add(`(Khó) Dãy số: ${n}, ${n*2}, ${n*4}, ?`,
-""+(n*8),
-[""+(n*6),""+(n*8),""+(n*10),""+(n*12)],
-"hard","Nhân đôi liên tiếp");
-}
-
-// 30 câu mẹo – suy luận khó
-const hardTrick=[
-["Cái gì càng rửa càng bẩn?","Nước","Dùng để rửa"],
-["Bác sĩ cho 3 viên thuốc, 30 phút uống 1 viên. Bao lâu uống hết?","60 phút","Không phải 90"],
-["Nếu hôm qua là ngày kia thì hôm nay là ngày gì?","Ngày mai","Chơi chữ"],
-["Cái gì có miệng mà không nói?","Con sông","Địa lý"]
-];
-
-let ht=0;
-while(questions.filter(q=>q.l==="hard").length<240){
-let q=hardTrick[ht%hardTrick.length];
-add("(Khó) "+q[0],q[1],
-[q[1],"Không biết","Sai","Không rõ"],
-"hard",q[2]);
-ht++;
-}
+</body>
+</html>
